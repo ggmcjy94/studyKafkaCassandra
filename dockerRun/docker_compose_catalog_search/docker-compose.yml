@@ -1,5 +1,6 @@
 version: '3.8'
 
+
 services:
   cassandra-node-0:
     image: cassandra
@@ -8,41 +9,15 @@ services:
       - CASSANDRA_CLUSTER_NAME=MyCluster
       - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
       - CASSANDRA_DC=dc1
-      - HEAP_NEWSIZE=128M
-      - MAX_HEAP_SIZE=1042M
     ports:
       - "7000:7000" #노드간 클러스터 내부 통신
       - "7001:7001" #노드간 보안 통신에 사용
       - "9042:9042" #CQL 클라이언트 통신
     healthcheck:
-      test: ["CMD", "cqlsh" ,"-e" ,"describe keyspaces"]
-      interval: 10s
+      test: ["CMD-SHELL", "nodetool status | grep 'UN'"]
+      interval: 20s
       timeout: 10s
-      retries: 50
-
-  # cassandra-node-1:
-  #   image: cassandra
-  #   environment:
-  #     - CASSANDRA_SEEDS=cassandra-node-0
-  #     - CASSANDRA_CLUSTER_NAME=MyCluster
-  #     - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
-  #     - CASSANDRA_DC=dc1
-  #   ports:
-  #     - "17000:7000" #노드간 클러스터 내부 통신
-  #     - "17001:7001" #노드간 보안 통신에 사용
-  #     - "19042:9042" #CQL 클라이언트 통신
-
-  # cassandra-node-2:
-  #   image: cassandra
-  #   environment:
-  #     - CASSANDRA_SEEDS=cassandra-node-0
-  #     - CASSANDRA_CLUSTER_NAME=MyCluster
-  #     - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
-  #     - CASSANDRA_DC=dc1
-  #   ports:
-  #     - "27000:7000" #노드간 클러스터 내부 통신
-  #     - "27001:7001" #노드간 보안 통신에 사용
-  #     - "29042:9042" #CQL 클라이언트 통신      
+      retries: 10
 
   myredis:
     image: redis
@@ -61,49 +36,6 @@ services:
       - "3306:3306"
     depends_on:
       - myredis
-
-
-  member-service:
-    image: member-service
-    ports:
-      - "8081:8080"
-    depends_on:
-      - mysql-server
-  
-  payment-service:
-    image: payment-service
-    ports:
-      - "8082:8080"
-    depends_on:
-      - mysql-server      
-
-  delivery-service:
-    image: delivery-service
-    ports:
-      - "8083:8080"
-    depends_on:
-      - mysql-server
-  
-  search-service:
-    image: search-service
-    ports:
-      - "8084:8080"
-    depends_on:
-      - mysql-server
-  
-  catalog-service:
-    image: catalog-service
-    ports:
-      - "8085:8080"
-    depends_on:
-      - mysql-server
-  
-  order-service:
-    image: order-service
-    ports:
-      - "8086:8080"
-    depends_on:
-      - mysql-server                  
 
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
@@ -152,3 +84,17 @@ services:
       KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka3:9092,EXTERNAL://localhost:19094
       KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
 
+
+  search-service:
+    image: search-service
+    ports:
+      - "8084:8080"
+    depends_on:
+      - mysql-server
+  
+  catalog-service:
+    image: catalog-service
+    ports:
+      - "8085:8080"
+    depends_on:
+      - mysql-server
